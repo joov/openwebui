@@ -1,0 +1,53 @@
+
+services:
+
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama:/root/.ollama
+    container_name: ollama
+    networks:
+      - openui_network
+    tty: true
+    ports:
+      - 11434:11434
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities:
+                - gpu
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    networks:
+      - openui_network
+    volumes:
+      - open-webui:/app/backend/data
+    ports:
+      - 3000:8080
+    environment:
+      - 'OLLAMA_BASE_URL=http://ollama:11434'
+      - 'WEBUI_SECRET_KEY=test123'
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      - ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities:
+                - gpu
+
+volumes:
+  open-webui: {}
+  ollama: {}
+
+networks:
+  openui_network:
